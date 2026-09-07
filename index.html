@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cross Crush – Bird Edition</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:#0f0f1a;display:flex;flex-direction:column;align-items:center;
+      justify-content:center;min-height:100vh;font-family:"Segoe UI",Tahoma,sans-serif;
+      color:#eee;gap:12px;padding:20px}
+    h1{font-size:1.8em;letter-spacing:4px;color:#fff}
+    #ui-panel{background:#1e1e30;border-radius:12px;padding:14px 24px;text-align:center;
+      width:100%;max-width:580px;border:1px solid #2e2e50}
+    #panel-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+    #bird-info{font-size:.88em;color:#888;letter-spacing:.4px;text-align:left}
+    #journal-btn{font-size:.78em;color:#a89fff;background:#1e1e2e;border:1px solid #3a3a60;
+      border-radius:8px;padding:4px 12px;cursor:pointer;letter-spacing:.5px;white-space:nowrap;
+      transition:background .18s;flex-shrink:0}
+    #journal-btn:hover{background:#2a2a42}
+    #points-badge{font-size:.80em;color:#a89fff;margin-bottom:6px;display:none}
+    #points-badge strong{color:#c8c0ff}
+    #goal-text{font-size:1.05em;margin-bottom:6px}
+    #shape-badge{display:inline-flex;align-items:center;gap:8px;background:#2a2a40;
+      border:1px solid #3a3a60;border-radius:8px;padding:5px 14px;font-size:.85em;
+      letter-spacing:1px;margin-bottom:10px;color:#bbb}
+    #shape-preview{display:block;border-radius:6px}
+    #progress-bar-bg{background:#2a2a40;border-radius:99px;height:16px;overflow:hidden;margin-bottom:8px}
+    #progress-bar-fill{height:100%;width:0%;border-radius:99px;transition:width .35s ease,background .35s ease}
+    #stats{font-size:.9em;color:#888;margin-bottom:8px}
+    #legend{display:flex;justify-content:center;gap:12px;flex-wrap:wrap}
+    .legend-item{display:inline-flex;align-items:center;gap:5px;font-size:.78em;color:#888}
+    .legend-swatch{width:14px;height:14px;border-radius:4px;border:1.5px solid;flex-shrink:0}
+    canvas{border-radius:14px;box-shadow:0 8px 36px rgba(0,0,0,.6);display:block;cursor:crosshair}
+    #hint{font-size:.82em;color:#555}
+    .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.84);
+      align-items:center;justify-content:center;z-index:10}#journal-overlay{z-index:20}
+    .overlay.show{display:flex}
+    .overlay-box{background:#1e1e30;border-radius:18px;padding:38px 50px;text-align:center;
+      border:1px solid #3a3a60;box-shadow:0 8px 48px rgba(0,0,0,.85);max-width:460px;width:90%}
+    #intro-bird-emoji{font-size:3.6em;line-height:1;margin-bottom:6px}
+    #intro-title{font-size:1.9em;font-weight:700;color:#fff;margin-bottom:2px}
+    #intro-subtitle{font-size:.9em;color:#888;margin-bottom:10px}
+    #intro-habitat-desc{font-size:.82em;color:#666;font-style:italic;margin-bottom:6px}
+    #intro-beak{font-size:.88em;color:#aaa;margin-bottom:6px}
+    #intro-fact{font-size:.80em;color:#666;font-style:italic;margin-bottom:12px;padding:0 8px;line-height:1.5}
+    .intro-divider{border:none;border-top:1px solid #2e2e50;margin:12px 0}
+    #intro-goal{font-size:1.05em;color:#ccc;margin-bottom:22px}
+    .upgrade-box{max-width:560px;max-height:90vh;overflow-y:auto;
+      scrollbar-width:thin;scrollbar-color:#3a3a60 #1e1e30}
+    #upgrade-win-title{font-size:2em;margin-bottom:4px}
+    #upgrade-win-msg{font-size:.95em;color:#999;margin-bottom:10px}
+    #upgrade-pts-bar{display:inline-block;background:#2a2a40;border:1px solid #3a3a60;
+      border-radius:8px;padding:6px 18px;font-size:.88em;color:#c8c0ff;margin-bottom:12px}
+    #upgrade-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;text-align:left}
+    .upgrade-card{background:#252540;border:1px solid #3a3a60;border-radius:10px;
+      padding:11px 13px;display:flex;flex-direction:column;gap:4px;transition:border-color .18s}
+    .upgrade-card:not(.maxed):hover{border-color:#6c63ff}
+    .upgrade-card.maxed{opacity:.55}
+    .upg-header{display:flex;justify-content:space-between;align-items:baseline;gap:4px}
+    .upg-name{font-size:.86em;font-weight:700;color:#ddd}
+    .upg-dots{font-size:.70em;color:#888;letter-spacing:1.5px;flex-shrink:0}
+    .upg-active{font-size:.74em;color:#7cbf7c}
+    .upg-next{font-size:.74em;color:#aaa}
+    .upg-full{font-size:.74em;color:#6c63ff;font-style:italic}
+    .upg-buy{margin-top:5px;align-self:flex-start;padding:4px 11px;font-size:.76em;font-weight:700;
+      border:none;border-radius:6px;background:#6c63ff;color:#fff;cursor:pointer;transition:background .15s}
+    .upg-buy:hover:not(:disabled){background:#554fd4}
+    .upg-buy:disabled{background:transparent;color:#555;cursor:not-allowed;border:1px solid #3a3a55}
+    #reset-btn{font-size:.72em;color:#444;background:none;border:none;padding:0;cursor:pointer;
+      text-decoration:underline;letter-spacing:0;font-weight:400;display:block;margin:6px auto 0}
+    #reset-btn:hover{color:#888;background:none}
+    .journal-box{max-width:700px;max-height:92vh;overflow:hidden;display:flex;
+      flex-direction:column;padding:28px 32px}
+    #journal-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px}
+    #journal-title{font-size:1.5em;font-weight:700;color:#fff}
+    #journal-count{font-size:.82em;color:#888;margin-top:3px}
+    #journal-close{font-size:1.4em;background:none;border:none;color:#666;cursor:pointer;
+      padding:0 4px;line-height:1;letter-spacing:0;font-weight:400;flex-shrink:0}
+    #journal-close:hover{color:#ccc;background:none}
+    #journal-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));
+      gap:12px;overflow-y:auto;flex:1;scrollbar-width:thin;scrollbar-color:#3a3a60 #1e1e30;padding-right:4px}
+    .j-card{background:#252540;border:1px solid #3a3a60;border-radius:10px;padding:12px;
+      text-align:center;transition:border-color .18s}
+    .j-card:hover:not(.j-locked){border-color:#6c63ff}
+    .j-card.j-locked{opacity:.35;background:#1a1a2e}
+    .j-emoji{font-size:2em;line-height:1.2;margin-bottom:4px}
+    .j-lock{font-size:1.8em;color:#333;line-height:1.2;margin-bottom:4px}
+    .j-name{font-size:.84em;font-weight:700;color:#ddd;margin-bottom:3px}
+    .j-meta{font-size:.72em;margin-bottom:6px}
+    .j-fact{font-size:.72em;color:#777;font-style:italic;line-height:1.45;text-align:left}
+    .j-date{font-size:.68em;color:#444;margin-top:6px}
+    .j-tier-req{font-size:.70em;color:#9980a0;margin-top:5px;font-style:italic}
+    .j-card.j-tier-locked{opacity:.25;background:#15151e}
+        #overlay-title{font-size:2.5em;margin-bottom:10px}
+    #overlay-msg{font-size:1em;color:#999;margin-bottom:28px}
+    button{padding:12px 36px;font-size:1em;font-weight:700;border:none;border-radius:10px;
+      background:#6c63ff;color:#fff;cursor:pointer;letter-spacing:1px;transition:background .18s}
+    button:hover{background:#554fd4}
+    @keyframes penaltyPulse{0%{color:#ff5533;transform:scale(1.22)}100%{color:inherit;transform:scale(1)}}
+    .penalty-flash{animation:penaltyPulse .55s ease-out}
+  </style>
+</head>
+<body>
+<h1>&#x1F426; CROSS CRUSH</h1>
+<div id="ui-panel">
+  <div id="panel-top">
+    <div id="bird-info">Loading…</div>
+    <button id="journal-btn" onclick="openJournal()">&#x1F4D6; Journal</button>
+  </div>
+  <div id="points-badge">&#11088; <strong><span id="points-count">0</span></strong>
+    upgrade point<span id="points-s">s</span> available — spend them after your next win!
+  </div>
+  <div id="goal-text">Loading…</div>
+  <div id="shape-badge">
+    <canvas id="shape-preview" width="54" height="54"></canvas>
+    <span id="shape-name">…</span>
+  </div>
+  <div id="progress-bar-bg"><div id="progress-bar-fill"></div></div>
+  <div id="stats">Loading…</div>
+  <div id="legend">
+    <span class="legend-item">
+      <span class="legend-swatch" style="background:#1e0404;border-color:#e74c3c"></span>
+      Junk: −1 extra move when eaten
+    </span>
+    <span class="legend-item">
+      <span class="legend-swatch" style="background:#1e1e2e;border-color:#555566"></span>
+      Stone: blocks beak, never eaten
+    </span>
+  </div>
+</div>
+<canvas id="gameCanvas"></canvas>
+<div id="hint">Hover to preview your beak · Click to eat!</div>
+<div id="intro-overlay" class="overlay">
+  <div class="overlay-box">
+    <div id="intro-bird-emoji">&#x1F426;</div>
+    <div id="intro-title">Species</div>
+    <div id="intro-subtitle">Size · Habitat</div>
+    <p id="intro-habitat-desc">Habitat.</p>
+    <p id="intro-beak">Beak.</p>
+    <p id="intro-fact">Fun fact.</p>
+    <hr class="intro-divider">
+    <p id="intro-goal">Goal</p>
+    <button onclick="startHunting()">&#x1F33F; Start Hunting!</button>
+  </div>
+</div>
+<div id="upgrade-overlay" class="overlay">
+  <div class="overlay-box upgrade-box">
+    <div id="upgrade-win-title">&#x1F389; Full Belly!</div>
+    <div id="upgrade-win-msg">Result.</div>
+    <div id="upgrade-pts-bar">&#11088; <span id="upg-pts-text">0 points</span></div>
+    <div id="upgrade-grid"></div>
+    <button onclick="finishUpgrading()">Done &#x1F426;</button>
+    <button id="reset-btn" onclick="resetProgress()">reset all progress</button>
+  </div>
+</div>
+<div id="journal-overlay" class="overlay">
+  <div class="overlay-box journal-box">
+    <div id="journal-header">
+      <div>
+        <div id="journal-title">&#x1F4D6; Bird Journal</div>
+        <div id="journal-count">0 / 0 birds discovered</div>
+      </div>
+      <button id="journal-close" onclick="closeJournal()">✕</button>
+    </div>
+    <div id="journal-cards"></div>
+  </div>
+</div>
+<div id="overlay" class="overlay">
+  <div class="overlay-box">
+    <div id="overlay-title"></div>
+    <div id="overlay-msg"></div>
+    <button onclick="initGame()">Try Again &#x1F426;</button>
+  </div>
+</div>
+<script>
+
+const COLORS = [
+  {name:"Fish",  emoji:"🐟", fill:"#3498db", dark:"#1a5276", light:"#7fb3d3"},
+  {name:"Meat",  emoji:"🥩", fill:"#e74c3c", dark:"#922b21", light:"#f1948a"},
+  {name:"Bugs",  emoji:"🐛", fill:"#27ae60", dark:"#1a5e38", light:"#76c893"},
+  {name:"Seeds", emoji:"🌾", fill:"#f1c40f", dark:"#9a7d0a", light:"#f7dc6f"},
+];
+const SHAPES = [
+  {beakName:"Hooked Beak",  beakDesc:"curves and grabs tiles in a cross",
+   icon:"+", offsets:[[0,0],[-1,0],[1,0],[0,-1],[0,1]]},
+  {beakName:"Wide Beak",    beakDesc:"scoops a 2×2 square of tiles",
+   icon:"#", offsets:[[0,0],[0,1],[1,0],[1,1]]},
+  {beakName:"Flat Beak",    beakDesc:"sweeps 3 tiles in a horizontal line",
+   icon:"—", offsets:[[0,-1],[0,0],[0,1]]},
+  {beakName:"Narrow Beak",  beakDesc:"pierces 3 tiles in a vertical column",
+   icon:"|", offsets:[[-1,0],[0,0],[1,0]]},
+];
+const BIRD_SIZES = [
+  {name:"Small",  emoji:"🐦", moves:5,  goalMin:9,  goalMax:14},
+  {name:"Medium", emoji:"🦢", moves:10, goalMin:14, goalMax:20},
+  {name:"Large",  emoji:"🦅", moves:15, goalMin:18, goalMax:24},
+];
+const BIRD_POOL = [
+  // Small · Fish
+  {species:"Common Kingfisher",  size:"Small",  diet:"Fish",
+   fact:"Kingfishers compensate for light refraction when targeting fish and can complete an entire dive and catch within a tenth of a second."},
+  {species:"Pied Kingfisher",    size:"Small",  diet:"Fish",
+   fact:"The Pied Kingfisher is the only kingfisher that hovers in still air over open water, hunting without any perch nearby."},
+  {species:"Belted Kingfisher",  size:"Small",  diet:"Fish",
+   fact:"Unusually for birds, the female Belted Kingfisher is more brightly coloured than the male, sporting a striking rufous belly band."},
+  {species:"Azure Kingfisher",   size:"Small",  diet:"Fish",
+   fact:"The Azure Kingfisher's vivid blue colour is structural — caused by light interference in feather nanostructures, not any blue pigment."},
+  // Small · Meat
+  {species:"Loggerhead Shrike",  size:"Small",  diet:"Meat",
+   fact:"The Loggerhead Shrike impales prey on thorns or barbed wire to store it and tear it apart, earning the nickname butcherbird."},
+  {species:"Great Grey Shrike",  size:"Small",  diet:"Meat",
+   fact:"The Great Grey Shrike defends territories up to 500 hectares and remembers the precise location of dozens of cached prey items."},
+  {species:"Red-backed Shrike",  size:"Small",  diet:"Meat",
+   fact:"Male Red-backed Shrikes present food gifts to potential mates; the quality of the offering directly influences whether she accepts."},
+  {species:"Brown Shrike",       size:"Small",  diet:"Meat",
+   fact:"The Brown Shrike makes a non-stop transoceanic flight of up to 3,000 km across the Indian Ocean during annual migration."},
+  // Small · Bugs
+  {species:"Marsh Warbler",      size:"Small",  diet:"Bugs",
+   fact:"The Marsh Warbler accurately mimics over 75 other species in a single song, weaving calls learned from birds on two continents."},
+  {species:"Blue Tit",           size:"Small",  diet:"Bugs",
+   fact:"Blue Tits are among the few birds documented to line nests with aromatic herbs, which appear to inhibit parasites and bacteria."},
+  {species:"Carolina Wren",      size:"Small",  diet:"Bugs",
+   fact:"The tiny Carolina Wren produces one of the loudest songs relative to body size of any bird — audible over 500 metres away."},
+  {species:"Spotted Flycatcher", size:"Small",  diet:"Bugs",
+   fact:"The Spotted Flycatcher can catch an insect in flight, return to its perch, and be ready to hunt again all within two seconds."},
+  // Small · Seeds
+  {species:"House Sparrow",      size:"Small",  diet:"Seeds",
+   fact:"The House Sparrow has followed human settlement to every continent except Antarctica, making it one of the most widespread birds on Earth."},
+  {species:"European Goldfinch", size:"Small",  diet:"Seeds",
+   fact:"The Goldfinch's slender beak evolved precisely to extract seeds from thistles — a food source almost no other small bird can access."},
+  {species:"Zebra Finch",        size:"Small",  diet:"Seeds",
+   fact:"Young Zebra Finches learn their entire song from a single tutor bird, and males who study multiple tutors develop more complex songs."},
+  {species:"Chaffinch",          size:"Small",  diet:"Seeds",
+   fact:"Chaffinches develop subtle regional song dialects in their first year — ornithologists use these accents to map population boundaries."},
+  // Medium · Fish
+  {species:"Grey Heron",         size:"Medium", diet:"Fish",
+   fact:"The Grey Heron can stand motionless for over an hour, then strike a fish at a speed faster than the human eye can follow."},
+  {species:"Little Egret",       size:"Medium", diet:"Fish",
+   fact:"The Little Egret stirs river sediment with one bright yellow foot to flush out hiding fish before striking — called foot-stirring."},
+  {species:"Great Cormorant",    size:"Medium", diet:"Fish",
+   fact:"Cormorants lack waterproof feathers to dive more efficiently, but must spread their wings to dry after every swim."},
+  {species:"Anhinga",            size:"Medium", diet:"Fish",
+   fact:"The Anhinga spears fish with a javelin-like thrust rather than grabbing them, then flips the impaled fish into the air to swallow head-first."},
+  // Medium · Meat
+  {species:"Carrion Crow",       size:"Medium", diet:"Meat",
+   fact:"Carrion Crows drop nuts onto roads to be cracked by cars, and have learned to wait at pedestrian crossings before safely collecting them."},
+  {species:"Common Raven",       size:"Medium", diet:"Meat",
+   fact:"Ravens can plan for the future — in experiments they traded an immediate treat for a token redeemable for a better reward later."},
+  {species:"Eurasian Magpie",    size:"Medium", diet:"Meat",
+   fact:"The Eurasian Magpie is one of very few non-mammalian species to pass the mirror self-recognition test, suggesting self-awareness."},
+  {species:"Eurasian Jay",       size:"Medium", diet:"Meat",
+   fact:"Jays bury thousands of acorns each autumn and recall most locations months later — inadvertently planting countless oak trees."},
+  // Medium · Bugs
+  {species:"American Robin",     size:"Medium", diet:"Bugs",
+   fact:"American Robins locate earthworms by tilting their head to listen for underground movement rather than detecting them visually."},
+  {species:"Song Thrush",        size:"Medium", diet:"Bugs",
+   fact:"The Song Thrush uses a chosen rock as an anvil to smash open snail shells — one of very few birds known to use a tool for foraging."},
+  {species:"Common Starling",    size:"Medium", diet:"Bugs",
+   fact:"Starling murmurations can involve millions of birds moving as one shape; each individual tracks only its seven nearest neighbours."},
+  {species:"Northern Mockingbird",size:"Medium",diet:"Bugs",
+   fact:"The Northern Mockingbird faithfully mimics over 200 species and has been recorded singing continuously through moonlit nights."},
+  // Medium · Seeds
+  {species:"Wood Pigeon",        size:"Medium", diet:"Seeds",
+   fact:"Wood Pigeons are among the few birds outside penguins and flamingos to feed chicks crop milk — a protein-rich parental secretion."},
+  {species:"Collared Dove",      size:"Medium", diet:"Seeds",
+   fact:"The Collared Dove spread from Turkey across all of Europe in under 20 years — one of the fastest avian range expansions ever recorded."},
+  {species:"Rose-ringed Parakeet",size:"Medium",diet:"Seeds",
+   fact:"Feral Rose-ringed Parakeets thrive in dozens of European cities; London alone hosts tens of thousands descended from escaped pets."},
+  {species:"Cockatiel",          size:"Medium", diet:"Seeds",
+   fact:"Cockatiels navigate vast distances across the Australian outback tracking weather patterns that predict where seed crops will briefly bloom."},
+  // Large · Fish
+  {species:"Osprey",             size:"Large",  diet:"Fish",
+   fact:"The Osprey has a reversible outer toe and spiny toe pads, gripping fish with two talons on each side so they can never slip free."},
+  {species:"Brown Pelican",      size:"Large",  diet:"Fish",
+   fact:"The Brown Pelican plunge-dives from 20 metres at 60 km/h; air sacs beneath the skin cushion the bone-jarring impact on every dive."},
+  {species:"Northern Gannet",    size:"Large",  diet:"Fish",
+   fact:"Gannets enter water at over 100 km/h after folding their wings at the last moment. They have no external nostrils — air enters through the beak."},
+  {species:"Wandering Albatross",size:"Large",  diet:"Fish",
+   fact:"The Wandering Albatross has the longest wingspan of any living bird — up to 3.5 metres — and can glide thousands of km without a wingbeat."},
+  // Large · Meat
+  {species:"Bald Eagle",         size:"Large",  diet:"Meat",
+   fact:"Bald Eagles return to the same nest every year. The largest recorded eagle nest weighed over one metric tonne after decades of additions."},
+  {species:"Peregrine Falcon",   size:"Large",  diet:"Meat",
+   fact:"The Peregrine Falcon is the fastest animal ever recorded, reaching over 389 km/h in a hunting dive called a stoop."},
+  {species:"Great Horned Owl",   size:"Large",  diet:"Meat",
+   fact:"The Great Horned Owl's talons require over 13 kg of force to pry open, giving it one of the strongest grips of any bird of prey."},
+  {species:"Harpy Eagle",        size:"Large",  diet:"Meat",
+   fact:"The Harpy Eagle has talons the size of a grizzly bear's claws and plucks monkeys and sloths directly from the rainforest canopy."},
+  {species:"Golden Eagle",       size:"Large",  diet:"Meat",
+   fact:"Golden Eagles can spot a rabbit from over 3 km away. Their eyes have two foveas (focus points) while human eyes have only one."},
+  {species:"Red Kite",           size:"Large",  diet:"Meat",
+   fact:"Red Kites steal food mid-flight and have been documented taking washing from clotheslines to line their nests with soft material."},
+  // Large · Bugs
+  {species:"Pileated Woodpecker",size:"Large",  diet:"Bugs",
+   fact:"The Pileated Woodpecker hammers wood up to 20 times per second; a specialised hyoid bone wrapping around its skull absorbs each impact."},
+  {species:"Green Woodpecker",   size:"Large",  diet:"Bugs",
+   fact:"The Green Woodpecker rarely drums on trees — it probes lawns and anthills with a tongue that extends over 10 cm beyond its beak tip."},
+  {species:"Hoopoe",             size:"Large",  diet:"Bugs",
+   fact:"Hoopoe nestlings squirt foul-smelling liquid at approaching predators from a gland near the tail as a chemical defence."},
+  {species:"Greater Roadrunner", size:"Large",  diet:"Bugs",
+   fact:"The Greater Roadrunner sprints at 32 km/h and kills rattlesnakes by grabbing them and repeatedly slamming their heads against rocks."},
+  // Large · Seeds
+  {species:"Hyacinth Macaw",     size:"Large",  diet:"Seeds",
+   fact:"The Hyacinth Macaw is the world's largest flying parrot, with a beak strong enough to crack a coconut and reportedly bend iron cage bars."},
+  {species:"Scarlet Macaw",      size:"Large",  diet:"Seeds",
+   fact:"Scarlet Macaws eat clay from riverbanks to neutralise toxins in the unripe seeds and hard nuts that make up much of their diet."},
+  {species:"Sulphur-crested Cockatoo",size:"Large",diet:"Seeds",
+   fact:"Sydney cockatoos learned to open wheelie-bin lids with their beaks to raid food scraps, and the behaviour spread culturally between flocks."},
+  {species:"Kakapo",             size:"Large",  diet:"Seeds",
+   fact:"The Kakapo is the world's only flightless parrot, the heaviest parrot alive, and one of the longest-lived birds — surviving over 90 years."},
+  // Tier 2 (Rare Sightings)
+  {species:"Ringed Kingfisher",size:"Small",diet:"Fish",tier:2,fact:"The Ringed Kingfisher is the largest kingfisher in the Americas at around 41 cm, ranging from the Rio Grande to Tierra del Fuego."},
+  {species:"Green Kingfisher",size:"Small",diet:"Fish",tier:2,fact:"One of the smallest American kingfishers, the Green Kingfisher perches just centimetres above water before making short precise plunge-dives."},
+  {species:"Eurasian Wryneck",size:"Small",diet:"Meat",tier:2,fact:"The Eurasian Wryneck can rotate its neck nearly 180 degrees and hisses exactly like a snake when disturbed at the nest — a remarkably effective predator deterrent."},
+  {species:"Woodchat Shrike",size:"Small",diet:"Meat",tier:2,fact:"Like all shrikes, the Woodchat impales prey on thorns; the male’s bold chestnut cap and white shoulder patches make it one of Europe’s most striking small predators."},
+  {species:"Eurasian Nuthatch",size:"Small",diet:"Bugs",tier:2,fact:"The Eurasian Nuthatch is the only bird that regularly descends tree trunks headfirst — its enlarged hind toe acts as an independent brake against gravity."},
+  {species:"Blackcap",size:"Small",diet:"Bugs",tier:2,fact:"A population of Blackcaps has evolved over just 50 years to winter in Britain rather than Africa — a real-time evolutionary shift tracked and published by ornithologists."},
+  {species:"Common Crossbill",size:"Small",diet:"Seeds",tier:2,fact:"The Common Crossbill is the only bird with naturally asymmetric mandibles that cross at the tips — evolved exclusively to prise apart the overlapping scales of pine cones."},
+  {species:"Bullfinch",size:"Small",diet:"Seeds",tier:2,fact:"In 18th-century Germany and Britain, Bullfinches were trained to sing short melodies on command; their capacity to learn and retain tunes was prized by collectors across Europe."},
+  {species:"Great Blue Heron",size:"Medium",diet:"Fish",tier:2,fact:"Despite standing over 1.2 metres tall, the Great Blue Heron weighs only around 2.5 kg — the apparent bulk is almost entirely feathers and air-filled hollow bones."},
+  {species:"Black-crowned Night Heron",size:"Medium",diet:"Fish",tier:2,fact:"The Black-crowned Night Heron hunts primarily after dark, relying on disproportionately large red eyes to detect fish and amphibians in near-total darkness."},
+  {species:"Jackdaw",size:"Medium",diet:"Meat",tier:2,fact:"Jackdaws are one of very few non-primate species shown to follow a human’s gaze to look at the same object — a behaviour linked to understanding shared attention."},
+  {species:"Rook",size:"Medium",diet:"Meat",tier:2,fact:"In controlled experiments, Rooks spontaneously raised water levels by dropping stones into tubes to reach floating food — demonstrating the physical reasoning behind Aesop’s fable."},
+  {species:"Common Blackbird",size:"Medium",diet:"Bugs",tier:2,fact:"Urban Blackbirds begin singing hours before their rural counterparts — artificial light at night has measurably shifted their entire biological clock forward."},
+  {species:"Cedar Waxwing",size:"Medium",diet:"Bugs",tier:2,fact:"Cedar Waxwings sometimes pass a berry along a line of perched birds one by one until the last individual eats it — a social behaviour whose precise function is still debated."},
+  {species:"Turtle Dove",size:"Medium",diet:"Seeds",tier:2,fact:"European Turtle Dove populations have crashed by more than 95% since 1970, making it one of the steepest collapses ever recorded for a once-common farmland bird."},
+  {species:"African Grey Parrot",size:"Medium",diet:"Seeds",tier:2,fact:"Alex the African Grey, studied for 30 years by Dr. Irene Pepperberg, could label over 100 objects, identify colours and shapes, and used ‘I’m sorry’ contextually."},
+  {species:"Dalmatian Pelican",size:"Large",diet:"Fish",tier:2,fact:"The Dalmatian Pelican is the world’s largest pelican, with a wingspan reaching 3.5 metres and a throat pouch that can temporarily hold several litres of water in a single scoop."},
+  {species:"White-tailed Eagle",size:"Large",diet:"Meat",tier:2,fact:"Europe’s largest eagle with a wingspan up to 2.45 metres, the White-tailed Eagle was hunted to extinction in Britain and successfully reintroduced over the past three decades."},
+  {species:"Black Woodpecker",size:"Large",diet:"Bugs",tier:2,fact:"Europe’s largest woodpecker, the Black Woodpecker excavates rectangular cavities so large they are regularly adopted as nest sites by owls, goldeneye ducks, and pine martens."},
+  {species:"Palm Cockatoo",size:"Large",diet:"Seeds",tier:2,fact:"Male Palm Cockatoos fashion sticks and seed pods into drumsticks and beat them against hollow logs — one of very few non-human animals known to make tools for sound production."},
+  // Tier 3 (Expert Birder)
+  {species:"Malachite Kingfisher",size:"Small",diet:"Fish",tier:3,fact:"One of the smallest kingfishers at just 13 cm, the Malachite Kingfisher is among the most widespread and photographed birds across sub-Saharan Africa."},
+  {species:"Pygmy Falcon",size:"Small",diet:"Meat",tier:3,fact:"Africa’s smallest raptor at 19–20 cm, the Pygmy Falcon nests inside the enormous communal structures of Sociable Weavers, gaining warmth and colony protection in return."},
+  {species:"Goldcrest",size:"Small",diet:"Bugs",tier:3,fact:"Europe’s lightest bird at just 4–7 grams, the Goldcrest regularly crosses the North Sea in a single overnight flight — proportionally equivalent to a human sprinting non-stop for 36 hours."},
+  {species:"Firecrest",size:"Small",diet:"Bugs",tier:3,fact:"One of Europe’s two lightest birds, the Firecrest survives freezing winters partly by foraging within the sheltered microclimate just inside the canopy of dense conifers."},
+  {species:"Snow Bunting",size:"Small",diet:"Seeds",tier:3,fact:"The Snow Bunting breeds further north than almost any other songbird; males arrive at Arctic territories while deep snow still blankets the tundra."},
+  {species:"Shoebill",size:"Medium",diet:"Fish",tier:3,fact:"The Shoebill’s enormous clog-shaped bill delivers one of the most powerful bill-snaps of any bird, enabling it to seize large lungfish and juvenile crocodilians from shallow water."},
+  {species:"Boat-billed Heron",size:"Medium",diet:"Fish",tier:3,fact:"The Boat-billed Heron hunts in near-total darkness by wading with its broad bill held open just beneath the surface, snapping shut the instant it contacts prey."},
+  {species:"Lammergeier",size:"Medium",diet:"Meat",tier:3,fact:"The Lammergeier drops large bones from heights of up to 80 metres onto rocks to shatter them; bone and marrow account for around 85–90% of its entire diet."},
+  {species:"Clark's Nutcracker",size:"Medium",diet:"Meat",tier:3,fact:"Clark’s Nutcracker caches up to 98,000 pine seeds across thousands of sites each autumn and recovers the majority months later — a spatial-memory feat unmatched in the bird world."},
+  {species:"Superb Lyrebird",size:"Medium",diet:"Bugs",tier:3,fact:"The Superb Lyrebird accurately reproduces chainsaws, camera shutters, car alarms, and over 20 bird species within a single unbroken song — arguably the world’s greatest vocal mimic."},
+  {species:"Antbird",size:"Medium",diet:"Bugs",tier:3,fact:"Many antbird species follow army ant swarms not to eat the ants — which are toxic — but to ambush insects, spiders, and lizards flushed by the advancing column."},
+  {species:"Resplendent Quetzal",size:"Medium",diet:"Seeds",tier:3,fact:"The male Resplendent Quetzal grows tail feathers exceeding 65 cm; so revered by the ancient Maya that harming a Quetzal was reportedly punishable by death."},
+  {species:"Gouldian Finch",size:"Medium",diet:"Seeds",tier:3,fact:"The Gouldian Finch occurs in three natural head-colour morphs — red, black, and yellow — determined by a single gene, one of the few birds with genetically fixed colour polymorphism."},
+  {species:"Marabou Stork",size:"Large",diet:"Fish",tier:3,fact:"The Marabou Stork has one of the broadest wingspans of any living bird at up to 3.2 metres and feeds primarily as a scavenger, using its bare head to reach inside large carcasses."},
+  {species:"Andean Condor",size:"Large",diet:"Meat",tier:3,fact:"The Andean Condor has the largest wingspan of any land bird at up to 3.3 metres and can soar hundreds of kilometres without a wingbeat, riding Andean thermals."},
+  {species:"Helmeted Hornbill",size:"Large",diet:"Bugs",tier:3,fact:"The Helmeted Hornbill is the only hornbill with a dense solid casque accounting for around 11% of its body weight; males use it as a battering ram in aerial jousting contests."},
+  {species:"Kea",size:"Large",diet:"Seeds",tier:3,fact:"The Kea is the world’s only alpine parrot and one of the most cognitively complex birds known — it solves multi-step mechanical puzzles and passes solutions to other individuals."},
+];
+
+const HABITATS = [
+  {name:"Ocean", emoji:"🌊",
+   description:"The open sea — teeming with fish, but treacherous currents carry junk.",
+   foodWeights:{Fish:1.5,Meat:1.0,Bugs:0.5,Seeds:0.3}, badRange:[2,6], neutralRange:[2,6]},
+  {name:"Beach", emoji:"🏖",
+   description:"Warm sands where sea meets shore — fish are plentiful and pebbles litter the ground.",
+   foodWeights:{Fish:1.2,Meat:1.0,Bugs:0.8,Seeds:0.8}, badRange:[2,6], neutralRange:[4,10]},
+  {name:"City",  emoji:"🏙",
+   description:"Concrete and noise — meat scraps are easy to find, but the streets overflow with junk.",
+   foodWeights:{Fish:0.8,Meat:1.2,Bugs:1.0,Seeds:0.8}, badRange:[5,14], neutralRange:[2,6]},
+  {name:"Forest",emoji:"🌲",
+   description:"Ancient trees and rustling leaves — bugs swarm and seeds fall freely.",
+   foodWeights:{Fish:0.4,Meat:0.8,Bugs:1.5,Seeds:1.3}, badRange:[2,5], neutralRange:[3,8]},
+  {name:"Farm",  emoji:"🌾",
+   description:"Endless golden fields of grain — seeds are yours for the taking.",
+   foodWeights:{Fish:0.3,Meat:0.7,Bugs:1.0,Seeds:1.8}, badRange:[1,4], neutralRange:[2,6]},
+];
+const UPGRADES = [
+  {id:"extraMoves",    icon:"🪶", name:"Tireless Wings",
+   desc:"+{val} extra move{s} per round",    bonusPerLevel:2, maxLevel:5, cost:2},
+  {id:"goalReduction", icon:"🎯", name:"Efficient Hunter",
+   desc:"Goal reduced by {val} tile{s}",     bonusPerLevel:2, maxLevel:4, cost:2},
+  {id:"dietBoost",     icon:"👁", name:"Sharp Eyes",
+   desc:"Goal food spawns {val}% more often",bonusPerLevel:30,maxLevel:4, cost:2},
+  {id:"lessJunk",      icon:"🛡", name:"Junk Sense",
+   desc:"Up to {val} fewer Junk tiles",      bonusPerLevel:2, maxLevel:5, cost:2},
+  {id:"lessStone",     icon:"🪨", name:"Stone Hopper",
+   desc:"Up to {val} fewer Stone tiles",     bonusPerLevel:2, maxLevel:5, cost:2},
+  {id:"ironGut",       icon:"⚙️",name:"Iron Gut",
+   desc:"Junk tiles never cost extra moves", bonusPerLevel:1, maxLevel:1, cost:4},
+  {id:"stoneCracker",  icon:"🪨", name:"Stone Cracker",
+   desc:"Your beak can eat Stone tiles (consumed as regular food)",
+   bonusPerLevel:1, maxLevel:1, cost:8},
+  {id:"rareSightings",icon:"🔭",name:"Rare Sightings",
+   desc:"Unlocks rare species encounters each round",
+   bonusPerLevel:1,maxLevel:1,cost:3},
+  {id:"expertBirder", icon:"🌍",name:"Expert Birder",
+   desc:"Requires Rare Sightings — unlocks legendary species",
+   bonusPerLevel:1,maxLevel:1,cost:6,requires:"rareSightings"},
+];
+const COLS=7, ROWS=7, TILE_SIZE=70, GAP=6, PADDING=18;
+const FLASH_MS=200, FALL_DURATION=380;
+const TILE_BAD=100, TILE_NEUTRAL=101;
+const canvas=document.getElementById("gameCanvas"), ctx=canvas.getContext("2d");
+canvas.width  = COLS*(TILE_SIZE+GAP)-GAP+PADDING*2;
+canvas.height = ROWS*(TILE_SIZE+GAP)-GAP+PADDING*2;
+let grid=[],hoverRow=-1,hoverCol=-1,goalColor=0,goalCount=0,consumed=0;
+let movesLeft=0,gameOver=false,isFlashing=false;
+let activeShape=null,activeBird=null,activeSizeData=null,activeHabitat=null;
+let penaltyAnimTimer=null,fallingTiles=[],isAnimating=false;
+let animStartTime=0,animDestSet=new Set();
+let upgradePoints=0,upgradeLevels={},journal=[];
+const SAVE_KEY="crossCrushBirdSave_v2";
+let _progressLoaded=false;
+
+function getTodayString(){
+  const d=new Date();
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+}
+function saveProgress(){
+  try{localStorage.setItem(SAVE_KEY,JSON.stringify({upgradePoints,upgradeLevels,journal}));}catch(e){}
+}
+function loadProgress(){
+  for(const u of UPGRADES)upgradeLevels[u.id]=0;
+  try{
+    const raw=localStorage.getItem(SAVE_KEY);if(!raw)return;
+    const sv=JSON.parse(raw);
+    if(typeof sv.upgradePoints==="number")upgradePoints=sv.upgradePoints;
+    if(sv.upgradeLevels)for(const u of UPGRADES){const v=sv.upgradeLevels[u.id];if(typeof v==="number")upgradeLevels[u.id]=Math.min(v,u.maxLevel);}
+    if(Array.isArray(sv.journal))journal=sv.journal;
+  }catch(e){}
+}
+function resetProgress(){
+  if(!confirm("Reset ALL progress? Cannot be undone."))return;
+  upgradePoints=0;for(const u of UPGRADES)upgradeLevels[u.id]=0;journal=[];
+  try{localStorage.removeItem(SAVE_KEY);}catch(e){}
+  saveProgress();
+  ["upgrade-overlay"].forEach(id=>document.getElementById(id).classList.remove("show"));
+  initGame();
+}
+function updateUI(){
+  const d=COLORS[goalColor];
+  document.getElementById("bird-info").innerHTML=
+    activeSizeData.emoji+" <strong>"+activeBird.species+"</strong> &nbsp;·&nbsp; "+activeHabitat.emoji+" "+activeHabitat.name;
+  document.getElementById("goal-text").innerHTML=
+    "Eat <strong style=\"color:"+d.fill+"\">"+goalCount+" "+d.emoji+" "+d.name+"</strong>"+
+    " — <strong>"+movesLeft+"</strong> move"+(movesLeft!==1?"s":"")+" left";
+  document.getElementById("shape-name").textContent=activeShape.icon+"  "+activeShape.beakName;
+  const bar=document.getElementById("progress-bar-fill");
+  bar.style.width=Math.min(100,consumed/goalCount*100)+"%";bar.style.background=d.fill;
+  document.getElementById("stats").textContent=consumed+" / "+goalCount+"  "+d.emoji+" "+d.name+" eaten";
+}
+function updatePointsBadge(){
+  const any=upgradePoints>0||UPGRADES.some(u=>upgradeLevels[u.id]>0);
+  document.getElementById("points-badge").style.display=any?"block":"none";
+  document.getElementById("points-count").textContent=upgradePoints;
+  document.getElementById("points-s").textContent=upgradePoints!==1?"s":"";
+}
+function triggerPenaltyFlash(){
+  const el=document.getElementById("goal-text");
+  el.classList.remove("penalty-flash");void el.offsetWidth;el.classList.add("penalty-flash");
+  if(penaltyAnimTimer)clearTimeout(penaltyAnimTimer);
+  penaltyAnimTimer=setTimeout(()=>el.classList.remove("penalty-flash"),600);
+}
+function describeUpgrade(upg,lv){const v=lv*upg.bonusPerLevel;return upg.desc.replace("{val}",v).replace("{s}",v!==1?"s":"");}
+function renderUpgradeCards(){
+  const grid=document.getElementById("upgrade-grid");grid.innerHTML="";
+  for(const upg of UPGRADES){
+    const lv=upgradeLevels[upg.id],maxed=lv>=upg.maxLevel;
+    const meetsReq=!upg.requires||upgradeLevels[upg.requires]>=1;
+    const canBuy=!maxed&&upgradePoints>=upg.cost&&meetsReq;
+    const dots="●".repeat(lv)+"○".repeat(upg.maxLevel-lv);
+    let inner="<div class=\"upg-header\"><span class=\"upg-name\">"+upg.icon+" "+upg.name+"</span>"+
+      "<span class=\"upg-dots\" title=\"Lv "+lv+"/"+upg.maxLevel+"\">"+dots+"</span></div>";
+    if(lv>0)inner+="<div class=\"upg-active\">✓ "+describeUpgrade(upg,lv)+"</div>";
+    if(maxed){inner+="<div class=\"upg-full\">✶ Fully upgraded</div>";}
+    else{
+      inner+="<div class=\"upg-next\">"+(lv===0?"Unlock":"Next")+": "+describeUpgrade(upg,lv+1)+"</div>";
+      inner+="<button class=\"upg-buy\" onclick=\"buyUpgrade('"+upg.id+"')\""+
+             (canBuy?"":" disabled")+">"+upg.cost+" pt"+(upg.cost>1?"s":"")+" →</button>";
+    }
+    const card=document.createElement("div");
+    card.className="upgrade-card"+(maxed?" maxed":"");card.id="upg-"+upg.id;card.innerHTML=inner;
+    grid.appendChild(card);
+  }
+}
+function updateUpgradePtsBar(){
+  const p=upgradePoints;
+  document.getElementById("upg-pts-text").textContent=
+    p===0?"no points remaining":p+" point"+(p!==1?"s":"")+" to spend";
+}
+function buyUpgrade(id){
+  const upg=UPGRADES.find(u=>u.id===id);
+  if(!upg||upgradeLevels[id]>=upg.maxLevel||upgradePoints<upg.cost)return;
+  upgradeLevels[id]++;upgradePoints-=upg.cost;
+  saveProgress();updatePointsBadge();updateUpgradePtsBar();renderUpgradeCards();
+}
+function finishUpgrading(){document.getElementById("upgrade-overlay").classList.remove("show");initGame();}
+
+function addJournalEntry(species){
+  if(!journal.find(e=>e.species===species)){journal.push({species,date:getTodayString()});saveProgress();}
+}
+function openJournal(){renderJournal();document.getElementById("journal-overlay").classList.add("show");}
+function closeJournal(){document.getElementById("journal-overlay").classList.remove("show");}
+function renderJournal(){
+  const cont=document.getElementById("journal-cards");cont.innerHTML="";
+  document.getElementById("journal-count").textContent=journal.length+" / "+BIRD_POOL.length+" birds discovered";
+  for(const bird of BIRD_POOL){
+    const entry=journal.find(e=>e.species===bird.species),unlocked=!!entry;
+    const sz=BIRD_SIZES.find(s=>s.name===bird.size),dt=COLORS.find(c=>c.name===bird.diet);
+    const tier=bird.tier??1;
+    const tierLocked=(tier===2&&upgradeLevels.rareSightings<1)||(tier===3&&(upgradeLevels.rareSightings<1||upgradeLevels.expertBirder<1));
+    const card=document.createElement("div");
+    card.className=unlocked?"j-card":tierLocked?"j-card j-tier-locked":"j-card j-locked";
+    if(unlocked){
+      card.innerHTML="<div class=\"j-emoji\">"+sz.emoji+"</div>"+
+        "<div class=\"j-name\">"+bird.species+"</div>"+
+        "<div class=\"j-meta\" style=\"color:"+dt.fill+"\">"+bird.size+" · "+dt.emoji+" "+bird.diet+"</div>"+
+        "<div class=\"j-fact\">"+bird.fact+"</div>"+
+        "<div class=\"j-date\">First seen "+entry.date+"</div>";
+    }else if(tierLocked){
+      const req=tier===2?"🔭 Rare Sightings":"🌍 Expert Birder";
+      card.innerHTML="<div class=\"j-lock\">🔒</div>"+
+        "<div class=\"j-name\">"+bird.size+" "+bird.diet+"-eater</div>"+
+        "<div class=\"j-tier-req\">Unlock: "+req+"</div>";
+    }else{
+      card.innerHTML="<div class=\"j-lock\">?</div><div class=\"j-name\">???</div>"+
+        "<div class=\"j-meta\" style=\"color:#444\">"+bird.size+" \u00b7 "+bird.diet+"</div>";
+    }
+    cont.appendChild(card);
+  }
+}
+function weightedRandTile(){
+  const w=COLORS.map((c,i)=>{let x=(activeHabitat.foodWeights[c.name]??1.0);if(i===goalColor)x+=upgradeLevels.dietBoost*0.3;return Math.max(0,x);});
+  const tot=w.reduce((s,x)=>s+x,0);let r=Math.random()*tot;
+  for(let i=0;i<w.length;i++){r-=w[i];if(r<=0)return i;}return COLORS.length-1;
+}
+function randInt(max){return Math.floor(Math.random()*max);}
+function randIntRange(a,b){return a+Math.floor(Math.random()*(b-a+1));}
+function pixelToCell(px,py){
+  const x=px-PADDING,y=py-PADDING;
+  const col=Math.floor(x/(TILE_SIZE+GAP)),row=Math.floor(y/(TILE_SIZE+GAP));
+  if(col<0||col>=COLS||row<0||row>=ROWS)return null;
+  if(x%(TILE_SIZE+GAP)>=TILE_SIZE||y%(TILE_SIZE+GAP)>=TILE_SIZE)return null;
+  return {row,col};
+}
+function getShapeCells(aR,aC){
+  return activeShape.offsets.map(([dr,dc])=>({row:aR+dr,col:aC+dc}))
+    .filter(({row,col})=>row>=0&&row<ROWS&&col>=0&&col<COLS);
+}
+function initGame(){
+  if(!_progressLoaded){loadProgress();_progressLoaded=true;}
+  activeHabitat=HABITATS[randInt(HABITATS.length)];
+  activeShape=SHAPES[randInt(SHAPES.length)];
+  const availTiers=new Set([1]);
+  if(upgradeLevels.rareSightings>=1)availTiers.add(2);
+  if(upgradeLevels.rareSightings>=1&&upgradeLevels.expertBirder>=1)availTiers.add(3);
+  const birdPool=BIRD_POOL.filter(b=>availTiers.has(b.tier??1));
+  activeBird=birdPool[randInt(birdPool.length)];
+  activeSizeData=BIRD_SIZES.find(s=>s.name===activeBird.size);
+  goalColor=COLORS.findIndex(c=>c.name===activeBird.diet);
+  goalCount=Math.max(1,randIntRange(activeSizeData.goalMin,activeSizeData.goalMax)-upgradeLevels.goalReduction*2);
+  movesLeft=activeSizeData.moves+upgradeLevels.extraMoves*2;
+  consumed=0;gameOver=false;isFlashing=false;isAnimating=false;hoverRow=-1;hoverCol=-1;
+  grid=Array.from({length:ROWS},()=>Array.from({length:COLS},weightedRandTile));
+  const bc=Math.max(0,randIntRange(activeHabitat.badRange[0],activeHabitat.badRange[1])-upgradeLevels.lessJunk*2);
+  const nc=Math.max(0,randIntRange(activeHabitat.neutralRange[0],activeHabitat.neutralRange[1])-upgradeLevels.lessStone*2);
+  const pos=[];for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++)pos.push([r,c]);
+  for(let i=pos.length-1;i>0;i--){const j=randInt(i+1);[pos[i],pos[j]]=[pos[j],pos[i]];}
+  for(let i=0;i<bc;i++)grid[pos[i][0]][pos[i][1]]=TILE_BAD;
+  for(let i=0;i<nc;i++)grid[pos[bc+i][0]][pos[bc+i][1]]=TILE_NEUTRAL;
+  ["overlay","upgrade-overlay","journal-overlay","intro-overlay"]
+    .forEach(id=>document.getElementById(id).classList.remove("show"));
+  updateUI();updatePointsBadge();drawShapePreview();draw();showIntro();
+}
+function showIntro(){
+  const d=COLORS[goalColor];
+  document.getElementById("intro-bird-emoji").textContent=activeSizeData.emoji;
+  document.getElementById("intro-title").textContent=activeBird.species;
+  document.getElementById("intro-subtitle").textContent=activeSizeData.name+" bird · "+activeHabitat.name+" "+activeHabitat.emoji;
+  document.getElementById("intro-habitat-desc").textContent=activeHabitat.description;
+  document.getElementById("intro-beak").innerHTML="Your <strong>"+activeShape.beakName+"</strong> "+activeShape.beakDesc+".";
+  document.getElementById("intro-fact").textContent=activeBird.fact;
+  document.getElementById("intro-goal").innerHTML=
+    "Goal: eat <strong>"+goalCount+" "+d.emoji+" "+d.name+"</strong> in <strong>"+movesLeft+" move"+(movesLeft!==1?"s":"")+"</strong>";
+  document.getElementById("intro-overlay").classList.add("show");
+}
+function startHunting(){document.getElementById("intro-overlay").classList.remove("show");}
+
+function rr(x,y,w,h,r){
+  ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.arcTo(x+w,y,x+w,y+r,r);
+  ctx.lineTo(x+w,y+h-r);ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
+  ctx.lineTo(x+r,y+h);ctx.arcTo(x,y+h,x,y+h-r,r);ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);ctx.closePath();
+}
+function draw(){
+  ctx.fillStyle="#0f0f1a";ctx.fillRect(0,0,canvas.width,canvas.height);
+  const sc=hoverRow>=0?getShapeCells(hoverRow,hoverCol):[],ss=new Set(sc.map(c=>c.row+","+c.col));
+  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){
+    const x=PADDING+c*(TILE_SIZE+GAP),y=PADDING+r*(TILE_SIZE+GAP),v=grid[r][c];
+    drawTile(x,y,v,ss.has(r+","+c),(r===hoverRow&&c===hoverCol)&&v!==TILE_NEUTRAL);
+  }
+  if(sc.length>0&&!isFlashing)drawShapeOutline(sc,hoverRow,hoverCol);
+}
+function drawTile(x,y,v,inS,isA){
+  if(v===TILE_BAD)drawBadTile(x,y,inS);
+  else if(v===TILE_NEUTRAL)drawNeutralTile(x,y,inS);
+  else drawColorTile(x,y,v,inS,isA);
+}
+function drawColorTile(x,y,idx,inS,isA){
+  const c=COLORS[idx];ctx.save();
+  ctx.fillStyle=isA?c.light:c.fill;ctx.globalAlpha=inS?1:0.5;rr(x,y,TILE_SIZE,TILE_SIZE,10);ctx.fill();ctx.globalAlpha=1;
+  ctx.strokeStyle=inS?c.light:c.dark;ctx.lineWidth=inS?2.5:1.5;rr(x,y,TILE_SIZE,TILE_SIZE,10);ctx.stroke();
+  ctx.globalAlpha=inS?1:0.6;ctx.font=Math.floor(TILE_SIZE*.42)+"px sans-serif";
+  ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(c.emoji,x+TILE_SIZE/2,y+TILE_SIZE/2+1);ctx.restore();
+}
+function drawBadTile(x,y,inS){
+  const cx=x+TILE_SIZE/2,cy=y+TILE_SIZE/2;ctx.save();
+  ctx.fillStyle=inS?"#3d0808":"#1e0404";ctx.globalAlpha=inS?1:0.75;rr(x,y,TILE_SIZE,TILE_SIZE,10);ctx.fill();ctx.globalAlpha=1;
+  ctx.save();ctx.globalAlpha=.07;ctx.strokeStyle="#ff4444";ctx.lineWidth=3;
+  for(let d=-TILE_SIZE;d<TILE_SIZE*2;d+=10){ctx.beginPath();ctx.moveTo(x+d,y);ctx.lineTo(x+d+TILE_SIZE,y+TILE_SIZE);ctx.stroke();}
+  ctx.restore();
+  ctx.strokeStyle=inS?"#ff4444":"#882222";ctx.lineWidth=inS?2.5:1.5;rr(x,y,TILE_SIZE,TILE_SIZE,10);ctx.stroke();
+  const tr=TILE_SIZE*.28;ctx.beginPath();
+  ctx.moveTo(cx,cy-tr);ctx.lineTo(cx+tr*.866,cy+tr*.5);ctx.lineTo(cx-tr*.866,cy+tr*.5);ctx.closePath();
+  ctx.strokeStyle=inS?"#ff7777":"#993333";ctx.lineWidth=inS?2.5:2;ctx.stroke();
+  const ic=inS?"#ff9999":"#883333",bh=tr*.38,bw=tr*.12,dr=tr*.09,by=cy-tr*.06;
+  ctx.fillStyle=ic;ctx.fillRect(cx-bw/2,by-bh/2,bw,bh);
+  ctx.beginPath();ctx.arc(cx,by+bh/2+dr*2.2,dr,0,Math.PI*2);ctx.fill();ctx.restore();
+}
+function drawNeutralTile(x,y,inS){
+  const cx=x+TILE_SIZE/2,cy=y+TILE_SIZE/2;ctx.save();
+  ctx.fillStyle=inS?"#2e2e42":"#1e1e2e";ctx.globalAlpha=inS?1:.75;rr(x,y,TILE_SIZE,TILE_SIZE,10);ctx.fill();ctx.globalAlpha=1;
+  ctx.strokeStyle=inS?"#e08030":"#3a3a52";ctx.lineWidth=inS?2.5:1.5;rr(x,y,TILE_SIZE,TILE_SIZE,10);ctx.stroke();
+  ctx.beginPath();ctx.arc(cx,cy,TILE_SIZE*.30,0,Math.PI*2);ctx.strokeStyle=inS?"#5a5a78":"#2e2e48";ctx.lineWidth=2;ctx.stroke();
+  const hs=TILE_SIZE*.16;ctx.strokeStyle=inS?"#e08030":"#4a4a68";ctx.lineWidth=inS?3:2.5;ctx.lineCap="round";
+  ctx.beginPath();ctx.moveTo(cx-hs,cy-hs);ctx.lineTo(cx+hs,cy+hs);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(cx+hs,cy-hs);ctx.lineTo(cx-hs,cy+hs);ctx.stroke();ctx.restore();
+}
+function drawShapeOutline(cells,aR,aC){
+  ctx.save();
+  for(const {row,col}of cells){
+    const x=PADDING+col*(TILE_SIZE+GAP),y=PADDING+row*(TILE_SIZE+GAP),v=grid[row][col];
+    const neu=v===TILE_NEUTRAL,anch=row===aR&&col===aC;
+    if(neu&&upgradeLevels.stoneCracker<1){ctx.strokeStyle="rgba(224,128,48,.92)";ctx.lineWidth=2;ctx.setLineDash([4,4]);ctx.shadowColor="#e08030";ctx.shadowBlur=8;}
+    else if(neu){ctx.strokeStyle="rgba(180,120,255,.92)";ctx.lineWidth=2.5;ctx.setLineDash([]);ctx.shadowColor="#b478ff";ctx.shadowBlur=14;}
+    else{ctx.strokeStyle="rgba(255,255,255,.90)";ctx.lineWidth=anch?3.5:2;ctx.setLineDash(anch?[]:[5,4]);ctx.shadowColor="white";ctx.shadowBlur=anch?18:10;}
+    rr(x-2,y-2,TILE_SIZE+4,TILE_SIZE+4,12);ctx.stroke();
+  }ctx.restore();
+}
+function drawFlash(food,junk){
+  ctx.save();
+  ctx.fillStyle="rgba(255,255,255,.82)";ctx.shadowColor="white";ctx.shadowBlur=20;
+  for(const{row,col}of food){rr(PADDING+col*(TILE_SIZE+GAP),PADDING+row*(TILE_SIZE+GAP),TILE_SIZE,TILE_SIZE,10);ctx.fill();}
+  ctx.fillStyle="rgba(255,80,40,.88)";ctx.shadowColor="#ff5028";ctx.shadowBlur=24;
+  for(const{row,col}of junk){rr(PADDING+col*(TILE_SIZE+GAP),PADDING+row*(TILE_SIZE+GAP),TILE_SIZE,TILE_SIZE,10);ctx.fill();}
+  ctx.restore();
+}
+function drawShapePreview(){
+  const pc=document.getElementById("shape-preview").getContext("2d"),SZ=54;
+  let mnR=1e9,mxR=-1e9,mnC=1e9,mxC=-1e9;
+  for(const[dr,dc]of activeShape.offsets){mnR=Math.min(mnR,dr);mxR=Math.max(mxR,dr);mnC=Math.min(mnC,dc);mxC=Math.max(mxC,dc);}
+  const sR=mxR-mnR+1,sC=mxC-mnC+1,ms=Math.max(sR,sC);
+  const p=4,g=3,tw=Math.floor((SZ-p*2-g*(ms-1))/ms);
+  const ox=(SZ-(sC*tw+(sC-1)*g))/2,oy=(SZ-(sR*tw+(sR-1)*g))/2;
+  const ss=new Set(activeShape.offsets.map(([dr,dc])=>dr+","+dc));
+  pc.clearRect(0,0,SZ,SZ);
+  for(let dr=mnR;dr<=mxR;dr++)for(let dc=mnC;dc<=mxC;dc++){
+    const x=ox+(dc-mnC)*(tw+g),y=oy+(dr-mnR)*(tw+g),ia=dr===0&&dc===0,ins=ss.has(dr+","+dc);
+    pc.beginPath();pc.roundRect(x,y,tw,tw,3);
+    pc.fillStyle=ia?"#ffffff":ins?"#a89fff":"#2a2a40";pc.globalAlpha=ins||ia?1:.28;pc.fill();pc.globalAlpha=1;
+  }
+}
+
+function consume(aR,aC){
+  if(gameOver||isFlashing||isAnimating)return;
+  const sh=getShapeCells(aR,aC);
+  const junk=sh.filter(c=>grid[c.row][c.col]===TILE_BAD);
+  const stoneEat=upgradeLevels.stoneCracker>=1;
+  const food=sh.filter(c=>grid[c.row][c.col]!==TILE_BAD&&(grid[c.row][c.col]!==TILE_NEUTRAL||stoneEat));
+  const newEaten=food.filter(c=>grid[c.row][c.col]===goalColor).length;
+  isFlashing=true;draw();drawFlash(food,junk);
+  setTimeout(()=>{
+    for(const{row,col}of[...junk,...food])grid[row][col]=null;
+    consumed+=newEaten;movesLeft-=1;
+    if(upgradeLevels.ironGut<1)movesLeft-=junk.length;
+    if(junk.length>0)triggerPenaltyFlash();
+    isFlashing=false;
+    prepareFallAnimation(()=>{updateUI();if(consumed>=goalCount)endGame(true);else if(movesLeft<=0)endGame(false);});
+  },FLASH_MS);
+}
+function prepareFallAnimation(done){
+  fallingTiles=[];animDestSet=new Set();
+  for(let c=0;c<COLS;c++){
+    const surv=[];for(let r=0;r<ROWS;r++)if(grid[r][c]!==null)surv.push({v:grid[r][c],r});
+    const empty=ROWS-surv.length;if(!empty)continue;
+    for(let r=0;r<ROWS;r++)grid[r][c]=null;
+    surv.forEach(({v,r:fr},i)=>{const tr=empty+i;grid[tr][c]=v;
+      if(fr!==tr){animDestSet.add(tr+","+c);
+        fallingTiles.push({col:c,v,sy:PADDING+fr*(TILE_SIZE+GAP),ey:PADDING+tr*(TILE_SIZE+GAP),cy:PADDING+fr*(TILE_SIZE+GAP)});}
+    });
+    for(let i=0;i<empty;i++){const v=weightedRandTile();grid[i][c]=v;animDestSet.add(i+","+c);
+      const sr=i-empty;fallingTiles.push({col:c,v,sy:PADDING+sr*(TILE_SIZE+GAP),ey:PADDING+i*(TILE_SIZE+GAP),cy:PADDING+sr*(TILE_SIZE+GAP)});}
+  }
+  if(!fallingTiles.length){drawStatic();done();return;}
+  isAnimating=true;animStartTime=performance.now();
+  const step=now=>{
+    const t=Math.min(1,(now-animStartTime)/FALL_DURATION),e=t*t;
+    for(const tile of fallingTiles)tile.cy=tile.sy+(tile.ey-tile.sy)*e;
+    drawAnim();t<1?requestAnimationFrame(step):(isAnimating=false,fallingTiles=[],animDestSet=new Set(),done());
+  };requestAnimationFrame(step);
+}
+function drawAnim(){
+  ctx.fillStyle="#0f0f1a";ctx.fillRect(0,0,canvas.width,canvas.height);
+  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){
+    if(animDestSet.has(r+","+c)||grid[r][c]===null)continue;
+    drawTile(PADDING+c*(TILE_SIZE+GAP),PADDING+r*(TILE_SIZE+GAP),grid[r][c],false,false);
+  }
+  ctx.save();ctx.beginPath();ctx.rect(0,PADDING,canvas.width,canvas.height-PADDING);ctx.clip();
+  for(const{col,v,cy}of fallingTiles)drawTile(PADDING+col*(TILE_SIZE+GAP),cy,v,false,false);
+  ctx.restore();
+}
+function drawStatic(){
+  ctx.fillStyle="#0f0f1a";ctx.fillRect(0,0,canvas.width,canvas.height);
+  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){
+    if(grid[r][c]!==null)drawTile(PADDING+c*(TILE_SIZE+GAP),PADDING+r*(TILE_SIZE+GAP),grid[r][c],false,false);
+  }
+}
+function endGame(won){
+  gameOver=true;const d=COLORS[goalColor];
+  if(won){
+    upgradePoints+=1;addJournalEntry(activeBird.species);
+    saveProgress();updatePointsBadge();
+    document.getElementById("upgrade-win-title").textContent="🎉 Full Belly!";
+    document.getElementById("upgrade-win-msg").textContent=
+      "Your "+activeBird.species+" feasted well — ate "+consumed+" "+d.emoji+" "+d.name+"!";
+    updateUpgradePtsBar();renderUpgradeCards();
+    document.getElementById("upgrade-overlay").classList.add("show");
+  }else{
+    document.getElementById("overlay-title").textContent="💀 Went Hungry";
+    document.getElementById("overlay-msg").textContent=
+      "Your "+activeBird.species+" couldn't find enough "+d.name+". Only ate "+consumed+" / "+goalCount+" "+d.emoji+".";
+    document.getElementById("overlay").classList.add("show");
+  }
+}
+canvas.addEventListener("mousemove",e=>{
+  if(gameOver||isFlashing||isAnimating)return;
+  const rect=canvas.getBoundingClientRect(),cell=pixelToCell(e.clientX-rect.left,e.clientY-rect.top);
+  if(cell){hoverRow=cell.row;hoverCol=cell.col;}else{hoverRow=-1;hoverCol=-1;}draw();
+});
+canvas.addEventListener("mouseleave",()=>{hoverRow=-1;hoverCol=-1;if(!isFlashing&&!isAnimating)draw();});
+canvas.addEventListener("click",e=>{
+  if(gameOver||isFlashing||isAnimating)return;
+  const rect=canvas.getBoundingClientRect(),cell=pixelToCell(e.clientX-rect.left,e.clientY-rect.top);
+  if(cell)consume(cell.row,cell.col);
+});
+initGame();
+</script>
+</body>
+</html>
