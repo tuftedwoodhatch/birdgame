@@ -505,7 +505,13 @@ function renderJournal(){
     const card=document.createElement("div");
     card.className=unlocked?"j-card":tierLocked?"j-card j-tier-locked":"j-card j-locked";
     if(unlocked){
-      card.innerHTML="<div class=\"j-emoji\">"+sz.emoji+"</div>"+
+      const _bImg=bird.img
+        ?`<img src="${bird.img}" height="52" `
+          +`style="border-radius:10px;object-fit:contain" `
+          +`data-fb="${sz.emoji}" `
+          +`onerror="this.outerHTML=this.dataset.fb">`
+        :sz.emoji;
+      card.innerHTML="<div class=\"j-emoji\">"+_bImg+"</div>"+
         "<div class=\"j-name\">"+bird.species+"</div>"+
         "<div class=\"j-meta\" style=\"color:"+dt.fill+"\">"+bird.size+" · "+dt.emoji+" "+bird.diet+"</div>"+
         "<div class=\"j-fact\">"+bird.fact+"</div>"+
@@ -567,7 +573,15 @@ function initGame(){
 }
 function showIntro(){
   const d=COLORS[goalColor];
-  document.getElementById("intro-bird-emoji").textContent=activeSizeData.emoji;
+  const _ibEl=document.getElementById("intro-bird-emoji");
+  if(activeBird.img){
+    _ibEl.innerHTML=`<img src="${activeBird.img}" height="72" `
+      +`style="border-radius:12px;object-fit:contain" `
+      +`data-fb="${activeSizeData.emoji}" `
+      +`onerror="this.outerHTML=this.dataset.fb">`;
+  }else{
+    _ibEl.textContent=activeSizeData.emoji;
+  }
   document.getElementById("intro-title").textContent=activeBird.species;
   document.getElementById("intro-subtitle").textContent=activeSizeData.name+" bird · "+activeHabitat.name+" "+activeHabitat.emoji;
   document.getElementById("intro-habitat-desc").textContent=activeHabitat.description;
