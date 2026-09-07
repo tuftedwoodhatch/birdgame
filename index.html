@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cross Crush – Bird Edition</title>
+  <title>Bird Game</title>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
     body{background:#0f0f1a;display:flex;flex-direction:column;align-items:center;
@@ -102,7 +102,7 @@
   </style>
 </head>
 <body>
-<h1>&#x1F426; CROSS CRUSH</h1>
+<h1><img src="images/logo.png" alt="Bird Game" height="44" style="vertical-align:middle;margin-right:10px;image-rendering:auto">Bird Game</h1>
 <div id="ui-panel">
   <div id="panel-top">
     <div id="bird-info">Loading…</div>
@@ -402,7 +402,7 @@ let activeShape=null,activeBird=null,activeSizeData=null,activeHabitat=null;
 let penaltyAnimTimer=null,fallingTiles=[],isAnimating=false;
 let animStartTime=0,animDestSet=new Set();
 let upgradePoints=0,upgradeLevels={},journal=[];
-const SAVE_KEY="crossCrushBirdSave_v2";
+const SAVE_KEY="birdGameSave_v2";
 let _progressLoaded=false;
 
 function getTodayString(){
