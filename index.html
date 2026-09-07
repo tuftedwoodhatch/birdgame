@@ -560,7 +560,7 @@ function renderJournal(){
     }else if(tierLocked){
       const req=tier===2?"🔭 Rare Sightings":"🌍 Expert Birder";
       card.innerHTML="<div class=\"j-lock\">🔒</div>"+
-        "<div class=\"j-name\">"+bird.size+" "+bird.diet+"-eater</div>"+
+        <!--"<div class=\"j-name\">"+bird.size+" "+bird.diet+"-eater</div>"+-->
         "<div class=\"j-tier-req\">Unlock: "+req+"</div>";
     }else{
       card.innerHTML="<div class=\"j-lock\">?</div><div class=\"j-name\">???</div>"+
